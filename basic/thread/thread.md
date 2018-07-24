@@ -7,6 +7,9 @@
  + [5、CAS 和 ABA](#5)
  + [6、synchronized 用法](#6)
  + [7、synchronized 内部实现原理](#7)
+ + [8、volatile 的实现原理](#8)
+ + [9、thread 的 wait、sleep、yield、join](#9)
+ + [10、Java 信号灯(Semaphore)](#10)
  + 
 
 ## <p id=1>1、synchronized 的实现原理以及锁优化？</p>
@@ -41,6 +44,10 @@ monitorexit:执行 monitorexit 的必须是 monitor 持有线程,没执行一次
 
 monitor:
 
+对于静态变量、方法加上 synchronized 关键字后，反编译出来常量池中多了ACC_SYNCHRONIZED 标志符,
+
+JVM就是根据该标示符来实现方法的同步的：当方法调用时，调用指令将会检查方法的 ACC_SYNCHRONIZED 访问标志是否被设置，如果设置了，执行线程将先获取monitor，获取成功之后才能执行方法体，方法执行完后再释放monitor。在方法执行期间，其他任何线程都无法再获得同一个monitor对象。 其实本质上没有区别，只是方法的同步是一种隐式的方式来实现，无需通过字节码来完成。
+
 ### Java 对象头：
 
 Monitor record:
@@ -50,6 +57,12 @@ Monitor record:
  + 偏向锁：偏向锁认为获取锁的总是同一个线程
 
 偏向锁流程：在对象头中有字段 threadId ,第一次获取锁的时候就把自己 id 写入对象头 threadId 中,同时`把锁内是否偏向锁状态设置为 1` ,下次获取锁时，查看 threadId 是否与自身线程 id 一致,如果一致表示当前线程已经获取到锁无需再次获取，略过了轻量级、重量级锁的加锁阶段,提高了效率。
+
+### jvm开启/关闭偏向锁
+
+开启偏向锁：-XX:+UseBiasedLocking -XX:BiasedLockingStartupDelay=0;
+
+关闭偏向锁：-XX:-UseBiasedLocking
 
  + 轻量级锁：轻量锁认为大多数情况不会出现锁竞争,即使出现竞争,获取锁的线程也会很快释放锁,获取不到锁的线程可以自旋等待一会,不会陷入阻塞状态
 
@@ -98,11 +111,17 @@ Monitor record:
 
 ## <p id=4>4、自旋锁(spin lock) 和 互斥锁(mutual exclusion lock)</p>
 
+### 自旋锁开启
+
+JDK1.6中-XX:+UseSpinning开启； 
+-XX:PreBlockSpin=10 为自旋次数； 
+JDK1.7后，去掉此参数，由jvm控制；
+
 ## <p id=5>5、CAS 和 ABA</p>
 
 CAS(Compare and Swap,比较交换): CAS(old,new) , 将 old 值替换为 new,但在替换之前会先检查 old 值是否修改(),未修改执行替换操作。
 
-ABA problem ： old 值修改为 A,再修改回 old , CAS 也能执行替换操作(检查 old 为原值,但其实已经发生变化了)
+ABA problem ： old 值修改为 A,再修改回 old , CAS 也能执行替换操作(检查 old 为原值,但其实已经发生变化了)，解决：各种乐观锁的实现中通常都会用版本戳version来对记录或对象标记，避免并发操作带来的问题，在Java中，AtomicStampedReference<E>也实现了这个作用，它通过包装[E,Integer]的元组来对对象标记版本戳stamp，从而避免ABA问题
 
 ## <p id=6>6、synchronized 用法</p>
 
@@ -124,6 +143,14 @@ public void method(){
 ## <p id=7>7、synchronized 内部实现原理</p>
 
 Synchronized的语义底层是通过一个monitor的对象来完成，其实wait/notify等方法也依赖于monitor对象
+
+## <p id=8>8、volatile 的实现原理</p>
+
+volatile 保证了可见性、禁止指令重排序(保证在使用 volatile 变量前的代码一定在之前执行,且执行完了才到 volatile 变量,变量后面的得在之后执行),不能保证原子性；
+
+## <p id=9>9、thread 的 wait、sleep、yield、join</p>
+
+## <p id=10>10、Java 信号灯(Semaphore)</p>
 
 
 

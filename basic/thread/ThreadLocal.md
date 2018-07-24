@@ -106,6 +106,17 @@ Thread 实例化对象会捕捉 ThreadLocal 变量,将找到的都拷贝到 thre
 
 ```
 
+重写 threadlocal 的 initialValue() :
+
+```java
+    ThreadLocal<Long> longLocal = new ThreadLocal<Long>(){
+        protected Long initialValue() {
+            return Thread.currentThread().getId();
+        };
+    };
+
+```
+
 ## <p id=3>ThreadLocal 疑问</p>
 
  + ThreadLocal 有什么用,本来是为了了减少每次使用都 new 一个对象,但使用 ThreadLocal 重写 initialValue() 应该是深拷贝了一个新对象出来,但这和直接 new 似乎差不多？
